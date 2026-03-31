@@ -40,47 +40,124 @@ Le pipeline comprend :
 ## Structure du dépôt
 
 ```
-ML_Backend_PY/
-├── app.py                    # Point d'entrée Flask (lance le serveur)
-├── config.py                 # Chemins et constantes globales
-├── generate_dataset.py       # Étape 0 : générateur Minimax-AlphaBeta + export CSV
+ML_HACKATHON/
 │
-├── ml/
-│   ├── loader.py             # Chargement des deux modèles .pkl
-│   └── predictor.py          # Encodage 18 features + évaluation ML
+├── ML_Backend_PY/                  # Backend Python — API Flask + ML
+│   ├── app.py                      # Point d'entrée Flask
+│   ├── config.py                   # Chemins et constantes globales
+│   ├── generate_dataset.py         # Étape 0 : générateur Minimax-AlphaBeta + CSV
+│   ├── notebook.ipynb              # EDA · Baseline · Coefficients · Modèles avancés
+│   ├── retrain_best_models.py      # Ré-entraînement et sauvegarde des modèles
+│   │
+│   ├── ml/
+│   │   ├── loader.py               # Chargement des deux modèles .pkl
+│   │   └── predictor.py            # Encodage 18 features + évaluation ML
+│   │
+│   ├── game/
+│   │   └── logic.py                # check_win · is_terminal · Minimax Alpha-Beta
+│   │
+│   ├── routes/
+│   │   └── api.py                  # Blueprint Flask — tous les endpoints REST
+│   │
+│   └── ressources/
+│       ├── dataset.csv             # Dataset généré (18 features + x_wins + is_draw)
+│       ├── model_xwins.pkl         # Meilleur modèle entraîné sur x_wins
+│       ├── model_draw.pkl          # Meilleur modèle entraîné sur is_draw
+│       └── *.png                   # Graphiques EDA et comparaisons
 │
-├── game/
-│   └── logic.py              # Logique plateau : check_win, is_terminal, Minimax
+├── ML_frontend/                    # Interface jouable — Next.js 16 + React 19
+│   ├── app/                        # Routes Next.js (App Router)
+│   │   └── page.tsx                # Page principale — monte <MorpionGame />
+│   │
+│   ├── components/
+│   │   ├── morpion/
+│   │   │   ├── morpion-game.tsx    # Composant racine — gestion des états de jeu
+│   │   │   ├── game-board.tsx      # Plateau 3×3 interactif
+│   │   │   ├── game-status.tsx     # Affichage du résultat + boutons de contrôle
+│   │   │   ├── mode-selector.tsx   # Sélecteur des 3 modes (PvP / ML / Hybride)
+│   │   │   └── score-board.tsx     # Tableau des scores
+│   │   ├── ui/                     # Composants shadcn/ui (Button, Card…)
+│   │   └── theme-provider.tsx      # Gestion du thème clair/sombre
+│   │
+│   ├── lib/
+│   │   ├── morpion-ai.ts           # Types, helpers, appels fetch au backend Flask
+│   │   └── utils.ts                # Utilitaire cn() pour les classes Tailwind
+│   │
+│   ├── styles/                     # Feuilles de style globales
+│   ├── public/                     # Assets statiques
+│   ├── next.config.mjs             # Configuration Next.js
+│   ├── tailwind.config.*           # Configuration Tailwind CSS v4
+│   ├── tsconfig.json               # Configuration TypeScript
+│   └── package.json                # Dépendances Node.js
 │
-├── routes/
-│   └── api.py                # Blueprint Flask — tous les endpoints REST
-│
-├── notebook.ipynb            # EDA · Baseline · Analyse coefficients · Modèles avancés
-│
-└── ressources/
-    ├── dataset.csv           # Dataset généré (18 features + x_wins + is_draw)
-    ├── model_xwins.pkl       # Meilleur modèle entraîné sur x_wins
-    ├── model_draw.pkl        # Meilleur modèle entraîné sur is_draw
-    └── *.png                 # Graphiques EDA et évaluation des modèles
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-## Lancer le backend
+## Lancer le projet
+
+### Backend Flask
 
 ```bash
-# 1. Activer l'environnement virtuel
+cd ML_Backend_PY
+
+# 1. Créer et activer l'environnement virtuel
+python -m venv venv
 .\venv\Scripts\activate        # Windows
 source venv/bin/activate       # Linux / macOS
 
-# 2. Installer les dépendances (première fois)
+# 2. Installer les dépendances
 pip install flask flask-cors joblib numpy scikit-learn pandas
 
-# 3. Lancer le serveur
+# 3. (Optionnel) Régénérer le dataset et ré-entraîner les modèles
+python generate_dataset.py
+python retrain_best_models.py
+
+# 4. Lancer le serveur
 python app.py
 ```
 
-Le serveur démarre sur **http://localhost:5000**.
+Le backend démarre sur **http://localhost:5000**.
+
+---
+
+### Frontend (interface jouable)
+
+> **Prérequis :** Node.js >= 18 et npm >= 9
+
+```bash
+cd ML_frontend
+
+# 1. Installer les dépendances
+npm install
+
+# 2. Lancer le serveur de développement
+npm run dev
+```
+
+L'interface est accessible sur **http://localhost:3000**.
+
+> **Important :** le backend Flask (`localhost:5000`) doit être démarré **avant** de jouer en mode _vs IA ML_ ou _vs IA Hybride_. Le mode _Humain vs Humain_ fonctionne sans backend.
+
+#### Stack technique du frontend
+
+| Technologie | Version | Rôle |
+| --- | --- | --- |
+| [Next.js](https://nextjs.org) | 16 | Framework React (App Router) |
+| [React](https://react.dev) | 19 | UI réactive |
+| [Tailwind CSS](https://tailwindcss.com) | v4 | Styles utilitaires |
+| [shadcn/ui](https://ui.shadcn.com) | — | Composants accessibles (Radix UI) |
+| [TypeScript](https://www.typescriptlang.org) | 5.7 | Typage statique |
+
+#### Commandes utiles
+
+```bash
+npm run build    # Build de production
+npm run lint     # Vérification ESLint
+npm run start    # Serveur de production (après build)
+```
 
 ---
 
